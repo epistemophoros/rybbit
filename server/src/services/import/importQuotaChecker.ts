@@ -83,12 +83,16 @@ export class ImportQuotaTracker {
               toYYYYMM(timestamp) as month,
               COUNT(*) as count
             FROM events
-            WHERE site_id IN (${grandfatheredSites.join(",")})
+            WHERE site_id IN {siteIds:Array(Int32)}
               AND type = 'pageview'
-              AND timestamp >= toDate('${startDate}')
+              AND timestamp >= toDate({startDate:String})
             GROUP BY month
             ORDER BY month
           `,
+          query_params: {
+            siteIds: grandfatheredSites,
+            startDate: startDate,
+          },
           format: "JSONEachRow",
         });
 
@@ -107,12 +111,16 @@ export class ImportQuotaTracker {
               toYYYYMM(timestamp) as month,
               COUNT(*) as count
             FROM events
-            WHERE site_id IN (${newSites.join(",")})
+            WHERE site_id IN {siteIds:Array(Int32)}
               AND type IN ('pageview', 'custom_event', 'performance')
-              AND timestamp >= toDate('${startDate}')
+              AND timestamp >= toDate({startDate:String})
             GROUP BY month
             ORDER BY month
           `,
+          query_params: {
+            siteIds: newSites,
+            startDate: startDate,
+          },
           format: "JSONEachRow",
         });
 
