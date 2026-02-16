@@ -1,6 +1,6 @@
 # Coolify deployment: uses Traefik (Coolify's proxy). No Caddy.
 # Do NOT use a .env file. Set all variables in Coolify's Environment Variables UI only.
-# DOMAIN_NAME must be hostname only (e.g. rybbit.aexoradao.com). No https:// or trailing slash — or /api/* will 404.
+# DOMAIN_NAME = hostname only, e.g. rybbit.aexoradao.com (no https://). POSTGRES_PORT is fixed at 5432 in this file — do not set it in Coolify.
 # Postgres and Clickhouse are internal-only (no host ports). Use "Escape special characters in labels" unchecked.
 # Add a domain for the `client` service in Coolify; backend shares the same domain via path rules.
 
@@ -63,8 +63,8 @@ services:
       - CLICKHOUSE_DB=${CLICKHOUSE_DB:-analytics}
       - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-frog}
       - POSTGRES_HOST=postgres
-      # Must be 5432: postgres container listens on 5432. Set POSTGRES_PORT=5432 in Coolify (not 5440).
-      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      # Fixed 5432: the postgres image only listens on 5432. Do not set POSTGRES_PORT in Coolify for this compose.
+      - POSTGRES_PORT=5432
       - POSTGRES_DB=${POSTGRES_DB:-analytics}
       - POSTGRES_USER=${POSTGRES_USER:-frog}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-frog}
