@@ -1,6 +1,6 @@
 # Coolify deployment: uses Traefik (Coolify's proxy). No Caddy.
-# Postgres and Clickhouse have no host ports (internal only) to avoid bind conflicts if env vars are not applied.
-# Use "Escape special characters in labels" unchecked so ${VAR} in labels is read.
+# Do NOT use a .env file. Set all variables in Coolify's Environment Variables UI only.
+# Postgres and Clickhouse are internal-only (no host ports). Use "Escape special characters in labels" unchecked.
 # Add a domain for the `client` service in Coolify; backend shares the same domain via path rules.
 
 services:

@@ -237,11 +237,11 @@ HOST_CLIENT_PORT="8081:3002"
 
 ### Using with Coolify
 
-Coolify uses Traefik as its proxy. Use the dedicated Compose file that removes Caddy, omits `build`/`ports` on app services, and adds Traefik labels:
+Coolify uses Traefik as its proxy. Use the dedicated Compose file and **do not use a `.env` file** — set all configuration in Coolify’s **Environment Variables** UI only.
 
-1. In Coolify, create a new project and add a resource using the **`docker-compose.coolify.yaml`** file from the repo (use this file as the compose source).
-2. Leave **"Escape special characters in labels"** unchecked so `${DOMAIN_NAME}` in Traefik labels is resolved.
-3. Set the required environment variables in Coolify (e.g. `DOMAIN_NAME`, `BASE_URL`, `BETTER_AUTH_SECRET`, and any optional ones). Set **`PORT`** to change the website (client) port if you need to edit it in Coolify’s UI.
+1. In Coolify, create a new project and add a resource using **`docker-compose.coolify.yaml`** from the repo as the compose source.
+2. Leave **"Escape special characters in labels"** unchecked so `${DOMAIN_NAME}` (and other vars) in labels are resolved.
+3. Set **all** required and optional variables in Coolify’s Environment Variables (e.g. `DOMAIN_NAME`, `BASE_URL`, `BETTER_AUTH_SECRET`, `PORT`, database credentials). Do not rely on a `.env` file in the repo.
 4. Add a domain for the **client** service in Coolify.
 5. Deploy all services.
 
