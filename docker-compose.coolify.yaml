@@ -105,21 +105,24 @@ services:
     container_name: client
     environment:
       - NODE_ENV=production
+      # PORT: set in Coolify to edit website port (Next.js listens on this)
+      - PORT=${PORT:-${CLIENT_PORT:-3002}}
       - NEXT_PUBLIC_BACKEND_URL=${BASE_URL}
       - NEXT_PUBLIC_DISABLE_SIGNUP=${DISABLE_SIGNUP}
       - DOMAIN_NAME=${DOMAIN_NAME}
     depends_on:
       - backend
     restart: unless-stopped
+    # Expose website port: set PORT (or HOST_CLIENT_PORT for host:container) in Coolify
     ports:
-      - "${HOST_CLIENT_PORT:-3002:3002}"
+      - "${HOST_CLIENT_PORT:-${PORT:-${CLIENT_PORT:-3002}}:${PORT:-${CLIENT_PORT:-3002}}}}"
     labels:
       - traefik.enable=true
       - traefik.docker.network=${TRAEFIK_NETWORK:-coolify}
       - traefik.http.routers.rybbit-client.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
       - traefik.http.routers.rybbit-client.tls=true
       - traefik.http.routers.rybbit-client.rule=Host(`${DOMAIN_NAME}`)
-      - traefik.http.services.rybbit-client.loadbalancer.server.port=${CLIENT_PORT:-3002}
+      - traefik.http.services.rybbit-client.loadbalancer.server.port=${PORT:-${CLIENT_PORT:-3002}}
       - traefik.http.routers.rybbit-client.priority=${TRAEFIK_CLIENT_PRIORITY:-10}
 
 volumes:
