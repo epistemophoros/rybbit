@@ -46,7 +46,7 @@ services:
       start_period: 10s
     restart: unless-stopped
     ports:
-      - "8123:8123"
+      - "${HOST_CLICKHOUSE_PORT:-8123:8123}"
 
   postgres:
     image: postgres:17.4
@@ -65,7 +65,7 @@ services:
       start_period: 10s
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "${HOST_POSTGRES_PORT:-5432:5432}"
 
   backend:
     image: ghcr.io/rybbit-io/rybbit-backend:${IMAGE_TAG:-latest}
@@ -77,11 +77,11 @@ services:
       - "${HOST_BACKEND_PORT:-127.0.0.1:3001:3001}"
     environment:
       - NODE_ENV=production
-      - CLICKHOUSE_HOST=http://clickhouse:8123
+      - CLICKHOUSE_HOST=http://clickhouse:${CLICKHOUSE_PORT:-8123}
       - CLICKHOUSE_DB=${CLICKHOUSE_DB:-analytics}
       - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-frog}
       - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
       - POSTGRES_DB=${POSTGRES_DB:-analytics}
       - POSTGRES_USER=${POSTGRES_USER:-frog}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-frog}

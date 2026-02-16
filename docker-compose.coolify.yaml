@@ -1,14 +1,16 @@
 # Coolify deployment: uses Traefik (Coolify's proxy). No Caddy.
-# Use with: "Escape special characters in labels" unchecked so ${DOMAIN_NAME} in labels is read.
-# Set HOST_BACKEND_PORT / HOST_CLIENT_PORT in Coolify to expose and select ports (e.g. "3001:3001", "3002:3002").
+# All user-configurable values are env vars: set in Coolify or .env.
+# Use "Escape special characters in labels" unchecked so ${VAR} in labels is read.
 # Add a domain for the `client` service in Coolify; backend shares the same domain via path rules.
 
 services:
   clickhouse:
     container_name: clickhouse
-    image: clickhouse/clickhouse-server:25.4.2
+    image: ${CLICKHOUSE_IMAGE:-clickhouse/clickhouse-server:25.4.2}
     volumes:
       - clickhouse-data:/var/lib/clickhouse
+    ports:
+      - "${HOST_CLICKHOUSE_PORT:-8123:8123}"
     configs:
       - source: clickhouse_network
         target: /etc/clickhouse-server/config.d/network.xml
@@ -23,7 +25,7 @@ services:
       - CLICKHOUSE_USER=${CLICKHOUSE_USER:-default}
       - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-frog}
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8123/ping"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:${CLICKHOUSE_PORT:-8123}/ping"]
       interval: 3s
       timeout: 5s
       retries: 5
@@ -33,7 +35,7 @@ services:
       - traefik.enable=false
 
   postgres:
-    image: postgres:17.4
+    image: ${POSTGRES_IMAGE:-postgres:17.4}
     container_name: postgres
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-frog}
@@ -41,6 +43,8 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-analytics}
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "${HOST_POSTGRES_PORT:-5432:5432}"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 3s
@@ -52,15 +56,15 @@ services:
       - traefik.enable=false
 
   backend:
-    image: ghcr.io/rybbit-io/rybbit-backend:${IMAGE_TAG:-latest}
+    image: ${BACKEND_IMAGE:-ghcr.io/rybbit-io/rybbit-backend:${IMAGE_TAG:-latest}}
     container_name: backend
     environment:
       - NODE_ENV=production
-      - CLICKHOUSE_HOST=http://clickhouse:8123
+      - CLICKHOUSE_HOST=http://clickhouse:${CLICKHOUSE_PORT:-8123}
       - CLICKHOUSE_DB=${CLICKHOUSE_DB:-analytics}
       - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-frog}
       - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
       - POSTGRES_DB=${POSTGRES_DB:-analytics}
       - POSTGRES_USER=${POSTGRES_USER:-frog}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-frog}
@@ -76,7 +80,7 @@ services:
       postgres:
         condition: service_started
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3001/api/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:${BACKEND_PORT:-3001}/api/health"]
       interval: 3s
       timeout: 5s
       retries: 5
@@ -86,18 +90,18 @@ services:
       - "${HOST_BACKEND_PORT:-3001:3001}"
     labels:
       - traefik.enable=true
-      - traefik.docker.network=coolify
-      - traefik.http.routers.rybbit-backend.entrypoints=https
+      - traefik.docker.network=${TRAEFIK_NETWORK:-coolify}
+      - traefik.http.routers.rybbit-backend.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
       - traefik.http.routers.rybbit-backend.tls=true
       - traefik.http.routers.rybbit-backend.rule=Host(`${DOMAIN_NAME}`) && (Path(`/api`) || PathPrefix(`/api/`))
-      - traefik.http.services.rybbit-backend.loadbalancer.server.port=3001
-      - traefik.http.routers.rybbit-backend.priority=100
+      - traefik.http.services.rybbit-backend.loadbalancer.server.port=${BACKEND_PORT:-3001}
+      - traefik.http.routers.rybbit-backend.priority=${TRAEFIK_BACKEND_PRIORITY:-100}
       - traefik.http.middlewares.rybbit-forward-headers.headers.customrequestheaders.X-Forwarded-Proto=https
       - traefik.http.middlewares.rybbit-forward-headers.headers.customrequestheaders.X-Forwarded-Host=${DOMAIN_NAME}
       - traefik.http.routers.rybbit-backend.middlewares=rybbit-forward-headers
 
   client:
-    image: ghcr.io/rybbit-io/rybbit-client:${IMAGE_TAG:-latest}
+    image: ${CLIENT_IMAGE:-ghcr.io/rybbit-io/rybbit-client:${IMAGE_TAG:-latest}}
     container_name: client
     environment:
       - NODE_ENV=production
@@ -111,12 +115,12 @@ services:
       - "${HOST_CLIENT_PORT:-3002:3002}"
     labels:
       - traefik.enable=true
-      - traefik.docker.network=coolify
-      - traefik.http.routers.rybbit-client.entrypoints=https
+      - traefik.docker.network=${TRAEFIK_NETWORK:-coolify}
+      - traefik.http.routers.rybbit-client.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
       - traefik.http.routers.rybbit-client.tls=true
       - traefik.http.routers.rybbit-client.rule=Host(`${DOMAIN_NAME}`)
-      - traefik.http.services.rybbit-client.loadbalancer.server.port=3002
-      - traefik.http.routers.rybbit-client.priority=10
+      - traefik.http.services.rybbit-client.loadbalancer.server.port=${CLIENT_PORT:-3002}
+      - traefik.http.routers.rybbit-client.priority=${TRAEFIK_CLIENT_PRIORITY:-10}
 
 volumes:
   clickhouse-data:
