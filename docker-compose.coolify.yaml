@@ -1,5 +1,6 @@
 # Coolify deployment: uses Traefik (Coolify's proxy). No Caddy.
 # Do NOT use a .env file. Set all variables in Coolify's Environment Variables UI only.
+# DOMAIN_NAME must be hostname only (e.g. rybbit.aexoradao.com). No https:// or trailing slash — or /api/* will 404.
 # Postgres and Clickhouse are internal-only (no host ports). Use "Escape special characters in labels" unchecked.
 # Add a domain for the `client` service in Coolify; backend shares the same domain via path rules.
 
@@ -62,7 +63,7 @@ services:
       - CLICKHOUSE_DB=${CLICKHOUSE_DB:-analytics}
       - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-frog}
       - POSTGRES_HOST=postgres
-      # Internal port postgres listens on (usually 5432). Use HOST_POSTGRES_PORT for host exposure (e.g. 5440:5432).
+      # Must be 5432: postgres container listens on 5432. Set POSTGRES_PORT=5432 in Coolify (not 5440).
       - POSTGRES_PORT=${POSTGRES_PORT:-5432}
       - POSTGRES_DB=${POSTGRES_DB:-analytics}
       - POSTGRES_USER=${POSTGRES_USER:-frog}
@@ -108,6 +109,8 @@ services:
       - NEXT_PUBLIC_BACKEND_URL=${BASE_URL}
       - NEXT_PUBLIC_DISABLE_SIGNUP=${DISABLE_SIGNUP}
       - DOMAIN_NAME=${DOMAIN_NAME}
+      # So server-side fetch from inside the container can reach the backend (avoids ENOTFOUND on public hostname).
+      - BACKEND_INTERNAL_URL=http://backend:${BACKEND_PORT:-3001}
     depends_on:
       - backend
     restart: unless-stopped
