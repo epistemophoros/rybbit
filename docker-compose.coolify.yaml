@@ -1,5 +1,6 @@
-# Coolify deployment: uses Traefik (Coolify's proxy). No Caddy, no build/ports on app services.
+# Coolify deployment: uses Traefik (Coolify's proxy). No Caddy.
 # Use with: "Escape special characters in labels" unchecked so ${DOMAIN_NAME} in labels is read.
+# Set HOST_BACKEND_PORT / HOST_CLIENT_PORT in Coolify to expose and select ports (e.g. "3001:3001", "3002:3002").
 # Add a domain for the `client` service in Coolify; backend shares the same domain via path rules.
 
 services:
@@ -81,6 +82,8 @@ services:
       retries: 5
       start_period: 10s
     restart: unless-stopped
+    ports:
+      - "${HOST_BACKEND_PORT:-3001:3001}"
     labels:
       - traefik.enable=true
       - traefik.docker.network=coolify
@@ -104,6 +107,8 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+    ports:
+      - "${HOST_CLIENT_PORT:-3002:3002}"
     labels:
       - traefik.enable=true
       - traefik.docker.network=coolify
