@@ -1,7 +1,7 @@
-// Server-side in Docker: use BACKEND_INTERNAL_URL so fetches from the client container reach the backend (e.g. http://backend:3001). Browser uses public URL.
+// Server-side in Docker: fetch self (127.0.0.1) so Next.js rewrite proxies to backend — avoids resolving public hostname from inside container.
 const apiBase =
   typeof window === "undefined" && process.env.BACKEND_INTERNAL_URL
-    ? `${process.env.BACKEND_INTERNAL_URL}/api`
+    ? `http://127.0.0.1:${process.env.PORT || 3002}/api`
     : process.env.NEXT_PUBLIC_BACKEND_URL === "http://localhost:3001"
       ? "http://localhost:3001/api"
       : `${process.env.NEXT_PUBLIC_BACKEND_URL}/api`;
